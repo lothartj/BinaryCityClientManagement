@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Clients - Binary City{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Clients</h1>
+    <a href="{% url 'client_create' %}" class="btn btn-primary">Create New Client</a>
+</div>
+
+{% if no_clients %}
+    <div class="alert alert-info">
+        No client(s) found.
+    </div>
+{% else %}
+    <div class="mb-4">
+        <input type="text" class="form-control" id="clientSearch" placeholder="Search clients by name or code...">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th class="text-start">Name</th>
+                    <th class="text-start">Client code</th>
+                    <th class="text-center">No. of linked contacts</th>
+                    <th class="text-start">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr class="client-row">
+                    <td class="text-start client-name">{{ client.name }}</td>
+                    <td class="text-start client-code">{{ client.client_code }}</td>
+                    <td class="text-center">{{ client.get_contact_count }}</td>
+                    <td class="text-start">
+                        <a href="{% url 'client_update' pk=client.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientSearch = document.getElementById('clientSearch');
+    if (clientSearch) {
+        clientSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.client-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.client-name').textContent.toLowerCase();
+                const code = row.querySelector('.client-code').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

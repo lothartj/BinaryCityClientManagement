@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}New{% endif %} Contact - Binary City{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{% if object %}Edit{% else %}New{% endif %} Contact</h1>
+
+    <ul class="nav nav-tabs mb-4" id="contactTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
+        </li>
+        {% if object %}
+        <li class="nav-item">
+            <a class="nav-link" id="clients-tab" data-bs-toggle="tab" href="#clients" role="tab">Client(s)</a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="tab-content" id="contactTabContent">
+        <div class="tab-pane fade show active" id="general" role="tabpanel">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.surname.id_for_label }}" class="form-label">Surname</label>
+                    {{ form.surname }}
+                    {% if form.surname.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.surname.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.email.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{% url 'contact_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+
+        {% if object %}
+        <div class="tab-pane fade" id="clients" role="tabpanel">
+            {% if not linked_clients %}
+                <div class="alert alert-info">
+                    No clients found.
+                </div>
+            {% else %}
+                <div class="mb-4">
+                    <h3>Linked Clients</h3>
+                    <input type="text" class="form-control mb-3" id="linkedClientsSearch" placeholder="Search linked clients...">
+                    <div class="table-responsive">
+                        <table class="table" id="linkedClientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Client name</th>
+                                    <th>Client code</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in linked_clients %}
+                                <tr class="linked-client-row">
+                                    <td class="client-name">{{ client.name }}</td>
+                                    <td class="client-code">{{ client.client_code }}</td>
+                                    <td>
+                                        <a href="{% url 'unlink_client_from_contact' contact_id=object.id client_id=client.id %}" 
+                                           class="btn btn-sm btn-danger">
+                                            Unlink
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            <h3 class="mt-4">Available Clients</h3>
+            <input type="text" class="form-control mb-3" id="availableClientsSearch" placeholder="Search available clients...">
+            {% if clients %}
+                <div class="table-responsive">
+                    <table class="table" id="availableClientsTable">
+                        <thead>
+                            <tr>
+                                <th>Client name</th>
+                                <th>Client code</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                                {% if client not in linked_clients %}
+                                <tr class="available-client-row">
+                                    <td class="client-name">{{ client.name }}</td>
+                                    <td class="client-code">{{ client.client_code }}</td>
+                                    <td>
+                                        <a href="{% url 'link_client_to_contact' contact_id=object.id client_id=client.id %}" 
+                                           class="btn btn-sm btn-success">
+                                            Link
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let hash = window.location.hash;
+    if (hash) {
+        let tab = new bootstrap.Tab(document.querySelector(`a[href="${hash}"]`));
+        tab.show();
+    }
+
+    let tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            window.location.hash = e.target.getAttribute('href');
+        });
+    });
+    const linkedClientsSearch = document.getElementById('linkedClientsSearch');
+    if (linkedClientsSearch) {
+        linkedClientsSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#linkedClientsTable .linked-client-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.client-name').textContent.toLowerCase();
+                const code = row.querySelector('.client-code').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+    const availableClientsSearch = document.getElementById('availableClientsSearch');
+    if (availableClientsSearch) {
+        availableClientsSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#availableClientsTable .available-client-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.client-name').textContent.toLowerCase();
+                const code = row.querySelector('.client-code').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Contacts - Binary City{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Contacts</h1>
+    <a href="{% url 'contact_create' %}" class="btn btn-primary">Create New Contact</a>
+</div>
+
+{% if no_contacts %}
+    <div class="alert alert-info">
+        No contact(s) found.
+    </div>
+{% else %}
+    <div class="mb-4">
+        <input type="text" class="form-control" id="contactSearch" placeholder="Search contacts by name, surname or email...">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th class="text-start">Name</th>
+                    <th class="text-start">Surname</th>
+                    <th class="text-start">Email address</th>
+                    <th class="text-center">No. of linked clients</th>
+                    <th class="text-start">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr class="contact-row">
+                    <td class="text-start contact-name">{{ contact.name }}</td>
+                    <td class="text-start contact-surname">{{ contact.surname }}</td>
+                    <td class="text-start contact-email">{{ contact.email }}</td>
+                    <td class="text-center">{{ contact.get_client_count }}</td>
+                    <td class="text-start">
+                        <a href="{% url 'contact_update' pk=contact.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contactSearch = document.getElementById('contactSearch');
+    if (contactSearch) {
+        contactSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.contact-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.contact-name').textContent.toLowerCase();
+                const surname = row.querySelector('.contact-surname').textContent.toLowerCase();
+                const email = row.querySelector('.contact-email').textContent.toLowerCase();
+                const fullName = `${name} ${surname}`.toLowerCase();
+                
+                if (name.includes(searchTerm) || 
+                    surname.includes(searchTerm) || 
+                    email.includes(searchTerm) ||
+                    fullName.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}New{% endif %} Client - Binary City{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{% if object %}Edit{% else %}New{% endif %} Client</h1>
+
+    <ul class="nav nav-tabs mb-4" id="clientTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
+        </li>
+        {% if object %}
+        <li class="nav-item">
+            <a class="nav-link" id="contacts-tab" data-bs-toggle="tab" href="#contacts" role="tab">Contact(s)</a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="tab-content" id="clientTabContent">
+        <div class="tab-pane fade show active" id="general" role="tabpanel">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if object %}
+                <div class="mb-3">
+                    <label for="{{ form.client_code.id_for_label }}" class="form-label">Client Code</label>
+                    {{ form.client_code }}
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{% url 'client_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+
+        {% if object %}
+        <div class="tab-pane fade" id="contacts" role="tabpanel">
+            {% if not linked_contacts %}
+                <div class="alert alert-info">
+                    No contacts found.
+                </div>
+            {% else %}
+                <div class="mb-4">
+                    <h3>Linked Contacts</h3>
+                    <input type="text" class="form-control mb-3" id="linkedContactsSearch" placeholder="Search linked contacts...">
+                    <div class="table-responsive">
+                        <table class="table" id="linkedContactsTable">
+                            <thead>
+                                <tr>
+                                    <th>Contact Full Name</th>
+                                    <th>Email address</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contact in linked_contacts %}
+                                <tr class="linked-contact-row">
+                                    <td class="contact-name">{{ contact.get_full_name }}</td>
+                                    <td class="contact-email">{{ contact.email }}</td>
+                                    <td>
+                                        <a href="{% url 'unlink_contact_from_client' client_id=object.id contact_id=contact.id %}" 
+                                           class="btn btn-sm btn-danger">
+                                            Unlink
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            <h3 class="mt-4">Available Contacts</h3>
+            <input type="text" class="form-control mb-3" id="availableContactsSearch" placeholder="Search available contacts...">
+            {% if contacts %}
+                <div class="table-responsive">
+                    <table class="table" id="availableContactsTable">
+                        <thead>
+                            <tr>
+                                <th>Contact Full Name</th>
+                                <th>Email address</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in contacts %}
+                                {% if contact not in linked_contacts %}
+                                <tr class="available-contact-row">
+                                    <td class="contact-name">{{ contact.get_full_name }}</td>
+                                    <td class="contact-email">{{ contact.email }}</td>
+                                    <td>
+                                        <a href="{% url 'link_contact_to_client' client_id=object.id contact_id=contact.id %}" 
+                                           class="btn btn-sm btn-success">
+                                            Link
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let hash = window.location.hash;
+    if (hash) {
+        let tab = new bootstrap.Tab(document.querySelector(`a[href="${hash}"]`));
+        tab.show();
+    }
+
+    let tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            window.location.hash = e.target.getAttribute('href');
+        });
+    });
+    const linkedContactsSearch = document.getElementById('linkedContactsSearch');
+    if (linkedContactsSearch) {
+        linkedContactsSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#linkedContactsTable .linked-contact-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.contact-name').textContent.toLowerCase();
+                const email = row.querySelector('.contact-email').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+    const availableContactsSearch = document.getElementById('availableContactsSearch');
+    if (availableContactsSearch) {
+        availableContactsSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#availableContactsTable .available-contact-row');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.contact-name').textContent.toLowerCase();
+                const email = row.querySelector('.contact-email').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

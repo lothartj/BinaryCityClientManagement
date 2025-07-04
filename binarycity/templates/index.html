@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome - Binary City{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center">
+        <h1 class="display-4">Welcome to <span style="background-color: #c51100; color: white; padding:10px; border-radius: 3px;">Binary City</span></h1>
+        <p class="lead">Manage your clients and contacts efficiently</p>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Clients</h5>
+                    <p class="card-text">
+                        Manage your client database, create new clients, and link them with contacts.
+                        <br><br>
+                        <small class="text-muted">
+                            Examples:<br>
+                            • First National Bank (FNB001)<br>
+                            • Protea Hotels (PRO001)<br>
+                            • IT Solutions (ITS001)
+                        </small>
+                    </p>
+                    <a href="{% url 'client_list' %}" class="btn btn-primary">View Clients</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Contacts</h5>
+                    <p class="card-text">
+                        Manage your contacts, create new ones, and link them with clients.
+                        <br><br>
+                        <small class="text-muted">
+                            Examples:<br>
+                            • John Smith (john.smith@email.com)<br>
+                            • Sarah Johnson (sarah.j@company.com)<br>
+                            • Mike Brown (mike.brown@business.com)
+                        </small>
+                    </p>
+                    <a href="{% url 'contact_list' %}" class="btn btn-primary">View Contacts</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
