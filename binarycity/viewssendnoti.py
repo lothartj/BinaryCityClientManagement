@@ -22,30 +22,36 @@ from functools import partial
 import threading
 
 logger = logging.getLogger(__name__)
+
 load_dotenv()
 
-ULTRAMSG_INSTANCE_ID = os.getenv('ULTRAMSG_INSTANCE_ID')
-ULTRAMSG_TOKEN = os.getenv('ULTRAMSG_TOKEN')
-ULTRAMSG_BASE_URL = os.getenv('ULTRAMSG_BASE_URL')
-
-if not all([ULTRAMSG_INSTANCE_ID, ULTRAMSG_TOKEN, ULTRAMSG_BASE_URL]):
-    logger.error("WhatsApp API credentials not found in environment variables!")
-    raise Exception("Please set ULTRAMSG_INSTANCE_ID, ULTRAMSG_TOKEN, and ULTRAMSG_BASE_URL in your .env file")
-
-ULTRAMSG_API_URL = f"{ULTRAMSG_BASE_URL}/{ULTRAMSG_INSTANCE_ID}"
-
 executor = ThreadPoolExecutor(max_workers=3)
+
+def get_whatsapp_credentials():
+    """Get WhatsApp API credentials from environment variables"""
+    instance_id = os.getenv('ULTRAMSG_INSTANCE_ID')
+    token = os.getenv('ULTRAMSG_TOKEN')
+    base_url = os.getenv('ULTRAMSG_BASE_URL')
+
+    if not all([instance_id, token, base_url]):
+        logger.error("WhatsApp API credentials not found in environment variables!")
+        raise Exception("Please set ULTRAMSG_INSTANCE_ID, ULTRAMSG_TOKEN, and ULTRAMSG_BASE_URL in your .env file")
+
+    return instance_id, token, base_url
 
 def send_whatsapp_message(phone, message):
     """Send WhatsApp message"""
     try:
+        instance_id, token, base_url = get_whatsapp_credentials()
+        api_url = f"{base_url}/{instance_id}"
+
         phone = phone.replace('+', '').replace(' ', '').replace('-', '')
         if not phone.startswith('264'):
             phone = '264' + phone
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        chat_url = f"{ULTRAMSG_API_URL}/messages/chat"
+        chat_url = f"{api_url}/messages/chat"
         text_payload = {
-            "token": ULTRAMSG_TOKEN,
+            "token": token,
             "to": phone,
             "body": message,
             "priority": 10
@@ -66,35 +72,42 @@ def send_whatsapp_message(phone, message):
 
 def notify_all_clients_background(message):
     """Background task to send notifications to all clients"""
-    notification_clients = NotificationClient.objects.filter(is_active=True)
-    
-    if not notification_clients.exists():
-        logger.warning("No active notification clients found!")
+    try:
+        notification_clients = NotificationClient.objects.filter(is_active=True)
+        
+        if not notification_clients.exists():
+            logger.warning("No active notification clients found!")
+            return []
+        
+        logger.info(f"Found {notification_clients.count()} active notification clients")
+        results = []
+        
+        for client in notification_clients:
+            phone = client.get_formatted_phone()
+            if phone:
+                logger.info(f"Sending message to {client.name} ({phone})")
+                result = send_whatsapp_message(phone, message)
+                logger.info(f"WhatsApp API response for {client.name}: {result}")
+                results.append({
+                    'client': client.name,
+                    'phone': phone,
+                    'result': result
+                })
+            else:
+                logger.warning(f"Invalid phone number for client {client.name}")
+        
+        return results
+    except Exception as e:
+        logger.error(f"Error in background notification task: {str(e)}")
         return []
-    
-    logger.info(f"Found {notification_clients.count()} active notification clients")
-    results = []
-    
-    for client in notification_clients:
-        phone = client.get_formatted_phone()
-        if phone:
-            logger.info(f"Sending message to {client.name} ({phone})")
-            result = send_whatsapp_message(phone, message)
-            logger.info(f"WhatsApp API response for {client.name}: {result}")
-            results.append({
-                'client': client.name,
-                'phone': phone,
-                'result': result
-            })
-        else:
-            logger.warning(f"Invalid phone number for client {client.name}")
-    
-    return results
 
 def notify_all_clients(message):
     """Asynchronously send notification to all active notification clients"""
-    executor.submit(notify_all_clients_background, message)
-    logger.info(f"Notification task submitted to background for message: {message}")
+    try:
+        executor.submit(notify_all_clients_background, message)
+        logger.info(f"Notification task submitted to background for message: {message}")
+    except Exception as e:
+        logger.error(f"Error submitting notification task: {str(e)}")
 
 @receiver(post_save, sender=Client)
 def client_changed(sender, instance, created, **kwargs):
