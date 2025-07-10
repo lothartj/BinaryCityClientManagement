@@ -5,6 +5,7 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
 from .models import Client, Contact
 from .forms import ClientForm, ContactForm
+from django.core.paginator import Paginator
 
 def index(request):
     return render(request, "index.html")
@@ -39,8 +40,16 @@ class ClientUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['contacts'] = Contact.objects.all()
-        context['linked_contacts'] = self.object.contacts.all()
+        all_contacts = Contact.objects.all()
+        linked_contacts = self.object.contacts.all()
+        linked_paginator = Paginator(linked_contacts, 5)
+        linked_page = self.request.GET.get('linked_page', 1)
+        context['linked_contacts'] = linked_paginator.get_page(linked_page)
+        available_contacts = all_contacts.exclude(id__in=linked_contacts.values_list('id', flat=True))
+        available_paginator = Paginator(available_contacts, 5)
+        available_page = self.request.GET.get('available_page', 1)
+        context['contacts'] = available_paginator.get_page(available_page)
+        
         return context
 
 def link_contact_to_client(request, client_id, contact_id):
@@ -87,8 +96,16 @@ class ContactUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['clients'] = Client.objects.all()
-        context['linked_clients'] = self.object.clients.all()
+        all_clients = Client.objects.all()
+        linked_clients = self.object.clients.all()
+        linked_paginator = Paginator(linked_clients, 5)
+        linked_page = self.request.GET.get('linked_page', 1)
+        context['linked_clients'] = linked_paginator.get_page(linked_page)
+        available_clients = all_clients.exclude(id__in=linked_clients.values_list('id', flat=True))
+        available_paginator = Paginator(available_clients, 5)
+        available_page = self.request.GET.get('available_page', 1)
+        context['clients'] = available_paginator.get_page(available_page)
+        
         return context
 
 def link_client_to_contact(request, contact_id, client_id):

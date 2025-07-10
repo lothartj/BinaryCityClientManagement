@@ -88,6 +88,37 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if linked_clients.paginator.num_pages > 1 %}
+                    <div class="pagination-container">
+                        <nav aria-label="Linked clients navigation">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item {% if not linked_clients.has_previous %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_clients.has_previous %}{{ linked_clients.previous_page_number }}{% else %}1{% endif %}#clients" {% if not linked_clients.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&larr;</span>
+                                    </a>
+                                </li>
+
+                                {% for num in linked_clients.paginator.page_range %}
+                                    {% if linked_clients.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > linked_clients.number|add:'-3' and num < linked_clients.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?linked_page={{ num }}#clients">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <li class="page-item {% if not linked_clients.has_next %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_clients.has_next %}{{ linked_clients.next_page_number }}{% else %}{{ linked_clients.paginator.num_pages }}{% endif %}#clients" {% if not linked_clients.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&rarr;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -121,6 +152,37 @@
                         </tbody>
                     </table>
                 </div>
+                {% if clients.paginator.num_pages > 1 %}
+                <div class="pagination-container">
+                    <nav aria-label="Available clients navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if not clients.has_previous %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if clients.has_previous %}{{ clients.previous_page_number }}{% else %}1{% endif %}#clients" {% if not clients.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&larr;</span>
+                                </a>
+                            </li>
+
+                            {% for num in clients.paginator.page_range %}
+                                {% if clients.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?available_page={{ num }}#clients">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <li class="page-item {% if not clients.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if clients.has_next %}{{ clients.next_page_number }}{% else %}{{ clients.paginator.num_pages }}{% endif %}#clients" {% if not clients.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
         {% endif %}

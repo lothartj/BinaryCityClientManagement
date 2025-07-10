@@ -76,6 +76,37 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if linked_contacts.paginator.num_pages > 1 %}
+                    <div class="pagination-container">
+                        <nav aria-label="Linked contacts navigation">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item {% if not linked_contacts.has_previous %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_contacts.has_previous %}{{ linked_contacts.previous_page_number }}{% else %}1{% endif %}#contacts" {% if not linked_contacts.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&larr;</span>
+                                    </a>
+                                </li>
+
+                                {% for num in linked_contacts.paginator.page_range %}
+                                    {% if linked_contacts.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > linked_contacts.number|add:'-3' and num < linked_contacts.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?linked_page={{ num }}#contacts">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <li class="page-item {% if not linked_contacts.has_next %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_contacts.has_next %}{{ linked_contacts.next_page_number }}{% else %}{{ linked_contacts.paginator.num_pages }}{% endif %}#contacts" {% if not linked_contacts.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&rarr;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -109,6 +140,37 @@
                         </tbody>
                     </table>
                 </div>
+                {% if contacts.paginator.num_pages > 1 %}
+                <div class="pagination-container">
+                    <nav aria-label="Available contacts navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if not contacts.has_previous %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if contacts.has_previous %}{{ contacts.previous_page_number }}{% else %}1{% endif %}#contacts" {% if not contacts.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&larr;</span>
+                                </a>
+                            </li>
+
+                            {% for num in contacts.paginator.page_range %}
+                                {% if contacts.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > contacts.number|add:'-3' and num < contacts.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?available_page={{ num }}#contacts">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <li class="page-item {% if not contacts.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if contacts.has_next %}{{ contacts.next_page_number }}{% else %}{{ contacts.paginator.num_pages }}{% endif %}#contacts" {% if not contacts.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
         {% endif %}
