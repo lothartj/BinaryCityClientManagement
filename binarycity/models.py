@@ -81,18 +81,18 @@ class Contact(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['surname', 'name']
+        ordering = ['name', 'surname']
         indexes = [
-            models.Index(fields=['surname', 'name']),
+            models.Index(fields=['name', 'surname']),
             models.Index(fields=['email']),
             models.Index(fields=['created_at']),
         ]
 
     def __str__(self):
-        return f"{self.surname} {self.name}"
+        return f"{self.name} {self.surname}"
 
     def get_full_name(self):
-        return f"{self.surname} {self.name}"
+        return f"{self.name} {self.surname}"
 
     def get_client_count(self):
         return self.clients.count()
