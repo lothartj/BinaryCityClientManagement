@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path,include
 from .views import index
 from . import views
+from . import viewschat
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -15,4 +16,7 @@ urlpatterns = [
     path('contacts/<int:pk>/edit/', views.ContactUpdateView.as_view(), name='contact_update'),
     path('contacts/<int:contact_id>/link-client/<int:client_id>/', views.link_client_to_contact, name='link_client_to_contact'),
     path('contacts/<int:contact_id>/unlink-client/<int:client_id>/', views.unlink_client_from_contact, name='unlink_client_from_contact'),
+    path('chat/', viewschat.chat, name='chat'),
+    path('chat/get_response/', viewschat.get_ai_response, name='get_ai_response'),
+    path('chat/clear/', viewschat.clear_conversation, name='clear_conversation'),
 ]
