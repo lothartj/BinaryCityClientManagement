@@ -6,6 +6,8 @@
 <div class="container">
     <h1>{% if object %}Edit{% else %}New{% endif %} Contact</h1>
 
+    <div id="messageContainer"></div>
+
     <ul class="nav nav-tabs mb-4" id="contactTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
@@ -56,11 +58,11 @@
         {% if object %}
         <div class="tab-pane fade" id="clients" role="tabpanel">
             {% if not linked_clients %}
-                <div class="alert alert-info">
+                <div class="alert alert-info" id="noLinkedClientsMessage">
                     No Linked Clients.
                 </div>
             {% else %}
-                <div class="mb-4">
+                <div class="mb-4" id="linkedClientsContainer">
                     <h3>Linked Clients</h3>
                     <input type="text" class="form-control mb-3" id="linkedClientsSearch" placeholder="Search linked clients...">
                     <div class="table-responsive">
@@ -74,14 +76,14 @@
                             </thead>
                             <tbody>
                                 {% for client in linked_clients %}
-                                <tr class="linked-client-row">
+                                <tr class="linked-client-row" data-client-id="{{ client.id }}">
                                     <td class="client-name">{{ client.name }}</td>
                                     <td class="client-code">{{ client.client_code }}</td>
                                     <td>
-                                        <a href="{% url 'unlink_client_from_contact' contact_id=object.id client_id=client.id %}" 
-                                           class="btn btn-sm btn-danger">
+                                        <button type="button" class="btn btn-sm btn-danger unlink-client" 
+                                                data-url="{% url 'unlink_client_from_contact' contact_id=object.id client_id=client.id %}">
                                             Unlink
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -137,14 +139,14 @@
                         <tbody>
                             {% for client in clients %}
                                 {% if client not in linked_clients %}
-                                <tr class="available-client-row">
+                                <tr class="available-client-row" data-client-id="{{ client.id }}">
                                     <td class="client-name">{{ client.name }}</td>
                                     <td class="client-code">{{ client.client_code }}</td>
                                     <td>
-                                        <a href="{% url 'link_client_to_contact' contact_id=object.id client_id=client.id %}" 
-                                           class="btn btn-sm btn-success">
+                                        <button type="button" class="btn btn-sm btn-success link-client"
+                                                data-url="{% url 'link_client_to_contact' contact_id=object.id client_id=client.id %}">
                                             Link
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endif %}
@@ -205,6 +207,108 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.hash = e.target.getAttribute('href');
         });
     });
+    function showMessage(message, type = 'success') {
+        const messageContainer = document.getElementById('messageContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        messageContainer.innerHTML = '';
+        messageContainer.appendChild(alert);
+    }
+    function handleLinkUnlink(url, row, isLink) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message);
+                if (isLink) {
+                    const linkedTable = document.querySelector('#linkedClientsTable tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'linked-client-row';
+                    newRow.dataset.clientId = data.client.id;
+                    newRow.innerHTML = `
+                        <td class="client-name">${data.client.name}</td>
+                        <td class="client-code">${data.client.client_code}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger unlink-client" 
+                                    data-url="/contacts/${window.location.pathname.split('/')[2]}/unlink-client/${data.client.id}/">
+                                Unlink
+                            </button>
+                        </td>
+                    `;
+                    linkedTable.appendChild(newRow);
+                    row.remove();
+                    const noLinkedMessage = document.getElementById('noLinkedClientsMessage');
+                    if (noLinkedMessage) {
+                        noLinkedMessage.remove();
+                    }
+                    const newUnlinkBtn = newRow.querySelector('.unlink-client');
+                    if (newUnlinkBtn) {
+                        newUnlinkBtn.addEventListener('click', function() {
+                            handleLinkUnlink(this.dataset.url, newRow, false);
+                        });
+                    }
+                } else {
+                    const availableTable = document.querySelector('#availableClientsTable tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'available-client-row';
+                    newRow.dataset.clientId = row.dataset.clientId;
+                    newRow.innerHTML = `
+                        <td class="client-name">${row.querySelector('.client-name').textContent}</td>
+                        <td class="client-code">${row.querySelector('.client-code').textContent}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-success link-client"
+                                    data-url="/contacts/${window.location.pathname.split('/')[2]}/link-client/${row.dataset.clientId}/">
+                                Link
+                            </button>
+                        </td>
+                    `;
+                    availableTable.appendChild(newRow);
+                    row.remove();
+                    const linkedTable = document.querySelector('#linkedClientsTable tbody');
+                    if (!linkedTable.querySelector('tr')) {
+                        const container = linkedTable.closest('.mb-4');
+                        container.innerHTML = `
+                            <div class="alert alert-info" id="noLinkedClientsMessage">
+                                No Linked Clients.
+                            </div>
+                        `;
+                    }
+                    const newLinkBtn = newRow.querySelector('.link-client');
+                    if (newLinkBtn) {
+                        newLinkBtn.addEventListener('click', function() {
+                            handleLinkUnlink(this.dataset.url, newRow, true);
+                        });
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred. Please try again.', 'danger');
+        });
+    }
+    document.querySelectorAll('.link-client').forEach(button => {
+        button.addEventListener('click', function() {
+            handleLinkUnlink(this.dataset.url, this.closest('tr'), true);
+        });
+    });
+    document.querySelectorAll('.unlink-client').forEach(button => {
+        button.addEventListener('click', function() {
+            handleLinkUnlink(this.dataset.url, this.closest('tr'), false);
+        });
+    });
+
     const linkedClientsSearch = document.getElementById('linkedClientsSearch');
     if (linkedClientsSearch) {
         linkedClientsSearch.addEventListener('input', function(e) {
@@ -223,6 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
     const availableClientsSearch = document.getElementById('availableClientsSearch');
     if (availableClientsSearch) {
         availableClientsSearch.addEventListener('input', function(e) {

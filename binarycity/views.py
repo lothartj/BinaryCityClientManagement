@@ -56,6 +56,16 @@ def link_contact_to_client(request, client_id, contact_id):
     client = get_object_or_404(Client, id=client_id)
     contact = get_object_or_404(Contact, id=contact_id)
     client.contacts.add(contact)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Contact {contact.get_full_name()} linked to {client.name}',
+            'contact': {
+                'id': contact.id,
+                'full_name': contact.get_full_name(),
+                'email': contact.email
+            }
+        })
     messages.success(request, f'Contact {contact.get_full_name()} linked to {client.name}')
     return redirect(f'/clients/{client_id}/edit/#contacts')
 
@@ -63,6 +73,12 @@ def unlink_contact_from_client(request, client_id, contact_id):
     client = get_object_or_404(Client, id=client_id)
     contact = get_object_or_404(Contact, id=contact_id)
     client.contacts.remove(contact)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Contact {contact.get_full_name()} unlinked from {client.name}',
+            'contact_id': contact.id
+        })
     messages.success(request, f'Contact {contact.get_full_name()} unlinked from {client.name}')
     return redirect(f'/clients/{client_id}/edit/#contacts')
 
@@ -112,6 +128,16 @@ def link_client_to_contact(request, contact_id, client_id):
     contact = get_object_or_404(Contact, id=contact_id)
     client = get_object_or_404(Client, id=client_id)
     contact.clients.add(client)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Client {client.name} linked to {contact.get_full_name()}',
+            'client': {
+                'id': client.id,
+                'name': client.name,
+                'client_code': client.client_code
+            }
+        })
     messages.success(request, f'Client {client.name} linked to {contact.get_full_name()}')
     return redirect(f'/contacts/{contact_id}/edit/#clients')
 
@@ -119,5 +145,11 @@ def unlink_client_from_contact(request, contact_id, client_id):
     contact = get_object_or_404(Contact, id=contact_id)
     client = get_object_or_404(Client, id=client_id)
     contact.clients.remove(client)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Client {client.name} unlinked from {contact.get_full_name()}',
+            'client_id': client.id
+        })
     messages.success(request, f'Client {client.name} unlinked from {contact.get_full_name()}')
     return redirect(f'/contacts/{contact_id}/edit/#clients')
