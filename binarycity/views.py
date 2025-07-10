@@ -47,14 +47,14 @@ def link_contact_to_client(request, client_id, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
     client.contacts.add(contact)
     messages.success(request, f'Contact {contact.get_full_name()} linked to {client.name}')
-    return redirect('client_update', pk=client_id)
+    return redirect(f'/clients/{client_id}/edit/#contacts')
 
 def unlink_contact_from_client(request, client_id, contact_id):
     client = get_object_or_404(Client, id=client_id)
     contact = get_object_or_404(Contact, id=contact_id)
     client.contacts.remove(contact)
     messages.success(request, f'Contact {contact.get_full_name()} unlinked from {client.name}')
-    return redirect('client_update', pk=client_id)
+    return redirect(f'/clients/{client_id}/edit/#contacts')
 
 class ContactListView(ListView):
     model = Contact
@@ -94,11 +94,11 @@ def link_client_to_contact(request, contact_id, client_id):
     client = get_object_or_404(Client, id=client_id)
     contact.clients.add(client)
     messages.success(request, f'Client {client.name} linked to {contact.get_full_name()}')
-    return redirect('contact_update', pk=contact_id)
+    return redirect(f'/contacts/{contact_id}/edit/#clients')
 
 def unlink_client_from_contact(request, contact_id, client_id):
     contact = get_object_or_404(Contact, id=contact_id)
     client = get_object_or_404(Client, id=client_id)
     contact.clients.remove(client)
     messages.success(request, f'Client {client.name} unlinked from {contact.get_full_name()}')
-    return redirect('contact_update', pk=contact_id)
+    return redirect(f'/contacts/{contact_id}/edit/#clients')
