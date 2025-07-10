@@ -24,7 +24,6 @@ class Client(models.Model):
         if not self.client_code:
             self.client_code = self.generate_client_code()
         super().save(*args, **kwargs)
-
     def generate_client_code(self):
         words = self.name.upper().split()
         if len(words) >= 3:
@@ -32,12 +31,37 @@ class Client(models.Model):
         else:
             name_part = ''.join(word[0] for word in words)
             if len(name_part) < 3:
-                last_word = words[-1] if words else ''
-                remaining_chars = last_word[1:] if len(last_word) > 1 else ''
-                name_part = name_part + remaining_chars
-                if len(name_part) < 3:
-                    padding_needed = 3 - len(name_part)
-                    name_part = name_part + ''.join(string.ascii_uppercase[:padding_needed])
+                if len(name_part) == 1:
+                    base = name_part
+                    second_letter = 'A'
+                    third_letter = 'A'
+                    while True:
+                        counter = 1
+                        while counter <= 999:
+                            candidate_code = f"{base}{second_letter}{third_letter}{counter:03d}"
+                            if not Client.objects.filter(client_code=candidate_code).exists():
+                                return candidate_code
+                            counter += 1
+                        if third_letter == 'Z':
+                            if second_letter == 'Z':
+                                raise ValueError("No available client codes")
+                            second_letter = chr(ord(second_letter) + 1)
+                            third_letter = 'A'
+                        else:
+                            third_letter = chr(ord(third_letter) + 1)
+                elif len(name_part) == 2:
+                    base = name_part
+                    padding_letter = 'A'
+                    while True:
+                        counter = 1
+                        while counter <= 999:
+                            candidate_code = f"{base}{padding_letter}{counter:03d}"
+                            if not Client.objects.filter(client_code=candidate_code).exists():
+                                return candidate_code
+                            counter += 1
+                        if padding_letter == 'Z':
+                            raise ValueError("No available client codes")
+                        padding_letter = chr(ord(padding_letter) + 1)
 
         base_code = name_part[:3]
         counter = 1
@@ -46,7 +70,6 @@ class Client(models.Model):
             if not Client.objects.filter(client_code=candidate_code).exists():
                 return candidate_code
             counter += 1
-
     def get_contact_count(self):
         return self.contacts.count()
 
