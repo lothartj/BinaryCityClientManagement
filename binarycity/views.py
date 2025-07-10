@@ -13,6 +13,7 @@ class ClientListView(ListView):
     model = Client
     template_name = 'binarycity/client_list.html'
     context_object_name = 'clients'
+    paginate_by = 5
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -60,6 +61,7 @@ class ContactListView(ListView):
     model = Contact
     template_name = 'binarycity/contact_list.html'
     context_object_name = 'contacts'
+    paginate_by = 5
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
