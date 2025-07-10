@@ -154,8 +154,6 @@
             padding: 8px 12px;
             font-size: 0.9rem;
         }
-        
-        /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .chat-container {
                 width: 100%;
@@ -329,8 +327,6 @@
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
             });
-
-            // Close chat when clicking outside
             document.addEventListener('click', function(e) {
                 if (chatContainer.classList.contains('active') &&
                     !chatContainer.contains(e.target) &&
@@ -338,8 +334,6 @@
                     toggleChat();
                 }
             });
-
-            // Handle escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && chatContainer.classList.contains('active')) {
                     toggleChat();
