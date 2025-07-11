@@ -153,3 +153,27 @@ def unlink_client_from_contact(request, contact_id, client_id):
         })
     messages.success(request, f'Client {client.name} unlinked from {contact.get_full_name()}')
     return redirect(f'/contacts/{contact_id}/edit/#clients')
+
+def get_client_contacts_analytics(request):
+    """Return analytics data for client contacts."""
+    clients = Client.objects.all()
+    data = {
+        'labels': [],
+        'data': []
+    }
+    for client in clients:
+        data['labels'].append(client.name)
+        data['data'].append(client.contacts.count())
+    return JsonResponse(data)
+
+def get_contact_clients_analytics(request):
+    """Return analytics data for contact clients."""
+    contacts = Contact.objects.all()
+    data = {
+        'labels': [],
+        'data': []
+    }
+    for contact in contacts:
+        data['labels'].append(contact.get_full_name())
+        data['data'].append(contact.clients.count())
+    return JsonResponse(data)

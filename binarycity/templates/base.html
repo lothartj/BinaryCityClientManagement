@@ -8,6 +8,7 @@
     <title>{% block title %}Binary City Management System{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .nav-tabs .nav-link {
             color: #495057;
@@ -192,7 +193,6 @@
             </div>
         </div>
     </nav>
-
     <div class="container mt-4">
         <div class="main-content">
             {% if messages %}
@@ -207,7 +207,6 @@
             {% endblock %}
         </div>
     </div>
-
     <div class="chat-container">
         <div class="chat-header">
             <h4><i class="bi bi-robot"></i> Binary City Bot</h4>
@@ -229,11 +228,9 @@
             </button>
         </div>
     </div>
-
     <div class="chat-icon-container" id="chatToggle" title="Binary City Bot">
         <i class="bi bi-chat-dots chat-icon"></i>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -245,11 +242,9 @@
             const chatMessages = document.getElementById('chatMessages');
             const clearButton = document.getElementById('clearChat');
             const closeButton = document.getElementById('closeChat');
-            
             function scrollToBottom() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
-
             function addMessage(content, isReceived) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${isReceived ? 'received' : 'sent'}`;
@@ -257,7 +252,6 @@
                 chatMessages.appendChild(messageDiv);
                 scrollToBottom();
             }
-
             function toggleChat() {
                 chatContainer.classList.toggle('active');
                 if (chatContainer.classList.contains('active')) {
@@ -265,15 +259,12 @@
                     scrollToBottom();
                 }
             }
-
             function sendMessage() {
                 const message = messageInput.value.trim();
                 if (!message) return;
-
                 addMessage(message, false);
                 messageInput.value = '';
                 messageInput.style.height = 'auto';
-
                 fetch('/chat/get_response/', {
                     method: 'POST',
                     headers: {
@@ -296,10 +287,8 @@
                     addMessage('Sorry, there was an error processing your message.', true);
                 });
             }
-
             chatToggle.addEventListener('click', toggleChat);
             closeButton.addEventListener('click', toggleChat);
-            
             clearButton.addEventListener('click', function() {
                 if (confirm('Clear chat history?')) {
                     fetch('/chat/clear/', {
@@ -313,16 +302,13 @@
                     });
                 }
             });
-
             sendButton.addEventListener('click', sendMessage);
-
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                 }
             });
-
             messageInput.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';

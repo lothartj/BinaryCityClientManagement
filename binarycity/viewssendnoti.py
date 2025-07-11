@@ -32,7 +32,6 @@ def get_whatsapp_credentials():
     instance_id = os.getenv('ULTRAMSG_INSTANCE_ID')
     token = os.getenv('ULTRAMSG_TOKEN')
     base_url = os.getenv('ULTRAMSG_BASE_URL')
-
     if not all([instance_id, token, base_url]):
         logger.error("WhatsApp API credentials not found in environment variables!")
         raise Exception("Please set ULTRAMSG_INSTANCE_ID, ULTRAMSG_TOKEN, and ULTRAMSG_BASE_URL in your .env file")
@@ -60,10 +59,8 @@ def send_whatsapp_message(phone, message):
         logger.info(f"Sending WhatsApp message to {phone}")
         logger.info(f"URL: {chat_url}")
         logger.info(f"Message: {message}")
-        
         response = requests.post(chat_url, data=encoded_payload, headers=headers)
         logger.info(f"WhatsApp API Response: {response.json()}")
-        
         return response.json()
             
     except Exception as e:
@@ -78,10 +75,8 @@ def notify_all_clients_background(message):
         if not notification_clients.exists():
             logger.warning("No active notification clients found!")
             return []
-        
         logger.info(f"Found {notification_clients.count()} active notification clients")
         results = []
-        
         for client in notification_clients:
             phone = client.get_formatted_phone()
             if phone:
@@ -95,7 +90,6 @@ def notify_all_clients_background(message):
                 })
             else:
                 logger.warning(f"Invalid phone number for client {client.name}")
-        
         return results
     except Exception as e:
         logger.error(f"Error in background notification task: {str(e)}")

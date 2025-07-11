@@ -56,7 +56,6 @@ class Client(models.Model):
                     if len(name_part) < 3:
                         padding_needed = 3 - len(name_part)
                         name_part = name_part + ''.join(string.ascii_uppercase[:padding_needed])
-
             base_code = name_part[:3]
             counter = 1
             while True:
@@ -74,7 +73,6 @@ class Contact(models.Model):
     email = models.EmailField(unique=True, validators=[EmailValidator()], db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         ordering = ['surname', 'name']
         indexes = [
@@ -82,7 +80,6 @@ class Contact(models.Model):
             models.Index(fields=['email']),
             models.Index(fields=['created_at']),
         ]
-
     def __str__(self):
         return f"{self.surname} {self.name}"
 

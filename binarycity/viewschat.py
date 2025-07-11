@@ -16,9 +16,7 @@ def chat(request):
     if not session_id:
         request.session.create()
         session_id = request.session.session_key
-
     conversation_history = cache.get(f'conversation_history_{session_id}', [])
-
     context = {
         'conversation_history': conversation_history,
         'session_id': session_id,
@@ -32,17 +30,13 @@ def get_ai_response(request):
             data = json.loads(request.body)
             user_message = data.get('message', '')
             session_id = data.get('session_id', '')
-
             if not API_KEY:
                 return JsonResponse({'error': 'API key not configured'}, status=500)
-
             conversation_history = cache.get(f'conversation_history_{session_id}', [])
-
             headers = {
                 "Authorization": f"Bearer {API_KEY}",
                 "Content-Type": "application/json"
             }
-
             messages = [
                 {
                     "role": "system",
@@ -79,22 +73,16 @@ def get_ai_response(request):
                     )
                 }
             ] + conversation_history + [{"role": "user", "content": user_message}]
-
             payload = {
                 "model": MODEL_NAME,
                 "messages": messages
             }
-
             response = requests.post(API_URL, headers=headers, json=payload)
             response.raise_for_status()
-
             ai_response = response.json()['choices'][0]['message']['content']
-
             conversation_history.append({"role": "user", "content": user_message})
             conversation_history.append({"role": "assistant", "content": ai_response})
-
             cache.set(f'conversation_history_{session_id}', conversation_history, timeout=None)
-
             return JsonResponse({'response': ai_response})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

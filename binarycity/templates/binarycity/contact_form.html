@@ -5,9 +5,7 @@
 {% block content %}
 <div class="container">
     <h1>{% if object %}Edit{% else %}New{% endif %} Contact</h1>
-
     <div id="messageContainer"></div>
-
     <ul class="nav nav-tabs mb-4" id="contactTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
@@ -18,7 +16,6 @@
         </li>
         {% endif %}
     </ul>
-
     <div class="tab-content" id="contactTabContent">
         <div class="tab-pane fade show active" id="general" role="tabpanel">
             <form method="post" class="needs-validation" novalidate>
@@ -54,7 +51,6 @@
                 <a href="{% url 'contact_list' %}" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
-
         {% if object %}
         <div class="tab-pane fade" id="clients" role="tabpanel">
             {% if not linked_clients %}
@@ -99,7 +95,6 @@
                                         <span aria-hidden="true">&larr;</span>
                                     </a>
                                 </li>
-
                                 {% for num in linked_clients.paginator.page_range %}
                                     {% if linked_clients.number == num %}
                                         <li class="page-item active">
@@ -111,7 +106,6 @@
                                         </li>
                                     {% endif %}
                                 {% endfor %}
-
                                 <li class="page-item {% if not linked_clients.has_next %}disabled{% endif %}">
                                     <a class="page-link" href="?linked_page={% if linked_clients.has_next %}{{ linked_clients.next_page_number }}{% else %}{{ linked_clients.paginator.num_pages }}{% endif %}#clients" {% if not linked_clients.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
                                         <span aria-hidden="true">&rarr;</span>
@@ -123,7 +117,6 @@
                     {% endif %}
                 </div>
             {% endif %}
-
             <h3 class="mt-4">Available Clients</h3>
             <input type="text" class="form-control mb-3" id="availableClientsSearch" placeholder="Search available clients...">
             {% if clients %}
@@ -163,7 +156,6 @@
                                     <span aria-hidden="true">&larr;</span>
                                 </a>
                             </li>
-
                             {% for num in clients.paginator.page_range %}
                                 {% if clients.number == num %}
                                     <li class="page-item active">
@@ -175,7 +167,6 @@
                                     </li>
                                 {% endif %}
                             {% endfor %}
-
                             <li class="page-item {% if not clients.has_next %}disabled{% endif %}">
                                 <a class="page-link" href="?available_page={% if clients.has_next %}{{ clients.next_page_number }}{% else %}{{ clients.paginator.num_pages }}{% endif %}#clients" {% if not clients.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
                                     <span aria-hidden="true">&rarr;</span>
@@ -191,7 +182,6 @@
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -200,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let tab = new bootstrap.Tab(document.querySelector(`a[href="${hash}"]`));
         tab.show();
     }
-
     let tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
     tabs.forEach(tab => {
         tab.addEventListener('shown.bs.tab', function(e) {
@@ -308,17 +297,14 @@ document.addEventListener('DOMContentLoaded', function() {
             handleLinkUnlink(this.dataset.url, this.closest('tr'), false);
         });
     });
-
     const linkedClientsSearch = document.getElementById('linkedClientsSearch');
     if (linkedClientsSearch) {
         linkedClientsSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('#linkedClientsTable .linked-client-row');
-            
             rows.forEach(row => {
                 const name = row.querySelector('.client-name').textContent.toLowerCase();
                 const code = row.querySelector('.client-code').textContent.toLowerCase();
-                
                 if (name.includes(searchTerm) || code.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
@@ -327,17 +313,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
     const availableClientsSearch = document.getElementById('availableClientsSearch');
     if (availableClientsSearch) {
         availableClientsSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('#availableClientsTable .available-client-row');
-            
             rows.forEach(row => {
                 const name = row.querySelector('.client-name').textContent.toLowerCase();
                 const code = row.querySelector('.client-code').textContent.toLowerCase();
-                
                 if (name.includes(searchTerm) || code.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
