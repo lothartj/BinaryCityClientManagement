@@ -1,8 +1,5 @@
-from django.contrib import admin
-from django.urls import path,include
-from .views import index
-from . import views
-from . import viewschat
+from django.urls import path
+from . import views, viewsanalytics, viewschat
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -13,6 +10,7 @@ urlpatterns = [
     path('clients/<int:client_id>/unlink-contact/<int:contact_id>/', views.unlink_contact_from_client, name='unlink_contact_from_client'),
     path('client-contacts-analytics/', views.get_client_contacts_analytics, name='client_contacts_analytics'),
     path('contact-clients-analytics/', views.get_contact_clients_analytics, name='contact_clients_analytics'),
+    path('ai-analytics-insights/', viewsanalytics.get_ai_analytics_insights, name='ai_analytics_insights'),
     path('contacts/', views.ContactListView.as_view(), name='contact_list'),
     path('contacts/create/', views.ContactCreateView.as_view(), name='contact_create'),
     path('contacts/<int:pk>/edit/', views.ContactUpdateView.as_view(), name='contact_update'),

@@ -82,11 +82,32 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="analyticsModalLabel">Contact Client Analytics</h5>
+                    <h5 class="modal-title" id="analyticsModalLabel">
+                        Contact Client Analytics
+                        <button type="button" class="btn btn-link text-primary p-0 ms-2" id="toggleAiInsights">
+                            <i class="fas fa-robot"></i>
+                        </button>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <canvas id="contactClientsChart"></canvas>
+                    <div id="chartContainer">
+                        <canvas id="contactClientsChart"></canvas>
+                    </div>
+                    <div id="aiInsightsContainer" class="d-none">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">AI Analysis</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="refreshAiInsights">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div id="aiInsightsContent">
+                            <p class="text-center">Loading...</p>
+                            <p class="text-center">Analyzing contact-client relationships...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -161,9 +182,69 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error loading analytics:', error);
             });
     }
+    function loadAiInsights() {
+        const aiInsightsContent = document.getElementById('aiInsightsContent');
+        aiInsightsContent.innerHTML = `
+            <p class="text-center">Loading...</p>
+            <p class="text-center">Analyzing contact-client relationships...</p>
+        `;
+        fetch('{% url "ai_analytics_insights" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                view_type: 'contact'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                aiInsightsContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        ${data.error}
+                    </div>
+                `;
+            } else {
+                aiInsightsContent.innerHTML = `
+                    <div class="ai-analysis">
+                        ${data.response.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            aiInsightsContent.innerHTML = `
+                <div class="alert alert-danger">
+                    An error occurred while fetching AI insights. Please try again.
+                </div>
+            `;
+        });
+    }
     const analyticsModal = document.getElementById('analyticsModal');
     if (analyticsModal) {
         analyticsModal.addEventListener('show.bs.modal', loadAnalytics);
+    }
+    const toggleAiInsights = document.getElementById('toggleAiInsights');
+    const chartContainer = document.getElementById('chartContainer');
+    const aiInsightsContainer = document.getElementById('aiInsightsContainer');
+    if (toggleAiInsights) {
+        toggleAiInsights.addEventListener('click', function() {
+            const showingChart = !chartContainer.classList.contains('d-none');
+            if (showingChart) {
+                chartContainer.classList.add('d-none');
+                aiInsightsContainer.classList.remove('d-none');
+                loadAiInsights();
+            } else {
+                chartContainer.classList.remove('d-none');
+                aiInsightsContainer.classList.add('d-none');
+            }
+        });
+    }
+    const refreshAiInsights = document.getElementById('refreshAiInsights');
+    if (refreshAiInsights) {
+        refreshAiInsights.addEventListener('click', loadAiInsights);
     }
 });
 </script>
