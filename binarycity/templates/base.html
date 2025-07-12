@@ -215,7 +215,7 @@
     </nav>
     <div class="container mt-4">
         <div class="main-content">
-            {% if messages %}
+            {% if messages and request.resolver_match.url_name != 'login' %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }}" role="alert">
                         {{ message }}
