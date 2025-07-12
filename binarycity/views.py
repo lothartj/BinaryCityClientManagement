@@ -6,6 +6,9 @@ from django.urls import reverse_lazy
 from .models import Client, Contact
 from .forms import ClientForm, ContactForm
 from django.core.paginator import Paginator
+import csv
+from django.http import HttpResponse
+from django.utils import timezone
 
 def index(request):
     return render(request, "index.html")
@@ -177,3 +180,34 @@ def get_contact_clients_analytics(request):
         data['labels'].append(contact.get_full_name())
         data['data'].append(contact.clients.count())
     return JsonResponse(data)
+
+def export_clients(request):
+    """Export clients to CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="clients_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Client Code', 'Number of Contacts'])
+    clients = Client.objects.all()
+    for client in clients:
+        writer.writerow([
+            client.name,
+            client.client_code,
+            client.get_contact_count()
+        ])
+    return response
+
+def export_contacts(request):
+    """Export contacts to CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="contacts_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Surname', 'Email', 'Number of Clients'])
+    contacts = Contact.objects.all()
+    for contact in contacts:
+        writer.writerow([
+            contact.name,
+            contact.surname,
+            contact.email,
+            contact.get_client_count()
+        ])
+    return response
