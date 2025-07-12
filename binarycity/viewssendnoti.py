@@ -20,6 +20,9 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import threading
+from django.utils import timezone
+from threading import local
+_thread_locals = local()
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +70,13 @@ def send_whatsapp_message(phone, message):
         logger.error(f"Error sending WhatsApp message: {str(e)}")
         return None
 
-def notify_all_clients_background(message):
+def format_message_with_user_info(message, request=None):
+    """Format message with user and timestamp information"""
+    timestamp = timezone.now().strftime("%d-%m-%Y %H:%M:%S")
+    user_info = f"by {request.user.username}" if request and request.user.is_authenticated else "by system"
+    return f"{message}\n\nAction performed {user_info} at {timestamp}"
+
+def notify_all_clients_background(message, request=None):
     """Background task to send notifications to all clients"""
     try:
         notification_clients = NotificationClient.objects.filter(is_active=True)
@@ -75,13 +84,14 @@ def notify_all_clients_background(message):
         if not notification_clients.exists():
             logger.warning("No active notification clients found!")
             return []
+        formatted_message = format_message_with_user_info(message, request)
         logger.info(f"Found {notification_clients.count()} active notification clients")
         results = []
         for client in notification_clients:
             phone = client.get_formatted_phone()
             if phone:
                 logger.info(f"Sending message to {client.name} ({phone})")
-                result = send_whatsapp_message(phone, message)
+                result = send_whatsapp_message(phone, formatted_message)
                 logger.info(f"WhatsApp API response for {client.name}: {result}")
                 results.append({
                     'client': client.name,
@@ -95,36 +105,51 @@ def notify_all_clients_background(message):
         logger.error(f"Error in background notification task: {str(e)}")
         return []
 
-def notify_all_clients(message):
+def notify_all_clients(message, request=None):
     """Asynchronously send notification to all active notification clients"""
     try:
-        executor.submit(notify_all_clients_background, message)
+        executor.submit(notify_all_clients_background, message, request)
         logger.info(f"Notification task submitted to background for message: {message}")
     except Exception as e:
         logger.error(f"Error submitting notification task: {str(e)}")
 
 @receiver(post_save, sender=Client)
 def client_changed(sender, instance, created, **kwargs):
+    from django.contrib.auth.models import AnonymousUser
+    from django.core.handlers.wsgi import WSGIRequest
+    request = getattr(_thread_locals, 'request', None)
+    user = getattr(request, 'user', None) if isinstance(request, WSGIRequest) else None
+    username = user.username if user and not isinstance(user, AnonymousUser) else 'system'
+    
     logger.info(f"Client signal triggered - Created: {created}, Instance: {instance.name}")
     if created:
-        message = f"New client added: {instance.name} (Client Code: {instance.client_code})"
+        message = f"New client added: {instance.name} (Client Code: {instance.client_code})\nAction performed by {username}"
     else:
-        message = f"Client updated: {instance.name} (Client Code: {instance.client_code})"
+        message = f"Client updated: {instance.name} (Client Code: {instance.client_code})\nAction performed by {username}"
     
     notify_all_clients(message)
 
 @receiver(post_save, sender=Contact)
 def contact_changed(sender, instance, created, **kwargs):
+    from django.contrib.auth.models import AnonymousUser
+    from django.core.handlers.wsgi import WSGIRequest
+    request = getattr(_thread_locals, 'request', None)
+    user = getattr(request, 'user', None) if isinstance(request, WSGIRequest) else None
+    username = user.username if user and not isinstance(user, AnonymousUser) else 'system'
     logger.info(f"Contact signal triggered - Created: {created}, Instance: {instance.get_full_name()}")
     if created:
-        message = f"New contact added: {instance.get_full_name()}"
+        message = f"New contact added: {instance.get_full_name()}\nAction performed by {username}"
     else:
-        message = f"Contact updated: {instance.get_full_name()}"
-    
+        message = f"Contact updated: {instance.get_full_name()}\nAction performed by {username}"
     notify_all_clients(message)
 
 @receiver(m2m_changed, sender=Client.contacts.through)
 def client_contacts_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    from django.contrib.auth.models import AnonymousUser
+    from django.core.handlers.wsgi import WSGIRequest
+    request = getattr(_thread_locals, 'request', None)
+    user = getattr(request, 'user', None) if isinstance(request, WSGIRequest) else None
+    username = user.username if user and not isinstance(user, AnonymousUser) else 'system'
     logger.info(f"M2M signal triggered - Action: {action}, Reverse: {reverse}")
     if action in ["post_add", "post_remove"]:
         if reverse:
@@ -132,13 +157,13 @@ def client_contacts_changed(sender, instance, action, reverse, model, pk_set, **
             clients = Client.objects.filter(pk__in=pk_set)
             client_names = ", ".join([client.name for client in clients])
             action_word = "added to" if action == "post_add" else "removed from"
-            message = f"Contact {contact.get_full_name()} was {action_word} clients: {client_names}"
+            message = f"Contact {contact.get_full_name()} was {action_word} clients: {client_names}\nAction performed by {username}"
         else:
             client = instance
             contacts = Contact.objects.filter(pk__in=pk_set)
             contact_names = ", ".join([contact.get_full_name() for contact in contacts])
             action_word = "added to" if action == "post_add" else "removed from"
-            message = f"Contacts {contact_names} were {action_word} client: {client.name}"
+            message = f"Contacts {contact_names} were {action_word} client: {client.name}\nAction performed by {username}"
         
         logger.info(f"Sending M2M change message: {message}")
         notify_all_clients(message)

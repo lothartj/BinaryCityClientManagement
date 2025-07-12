@@ -18,7 +18,6 @@ class ClientListView(ListView):
     template_name = 'binarycity/client_list.html'
     context_object_name = 'clients'
     paginate_by = 5
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['no_clients'] = not self.get_queryset().exists()
@@ -29,7 +28,6 @@ class ClientCreateView(CreateView):
     form_class = ClientForm
     template_name = 'binarycity/client_form.html'
     success_url = reverse_lazy('client_list')
-
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, 'Client created successfully.')
