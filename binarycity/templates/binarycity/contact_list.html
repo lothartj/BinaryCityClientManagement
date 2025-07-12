@@ -212,7 +212,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 aiInsightsContent.innerHTML = `
                     <div class="ai-analysis">
-                        ${data.response.replace(/\n/g, '<br>')}
+                        ${data.response
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/^\* (.+)$/gm, '• $1')
+                            .replace(/\n/g, '<br>')}
                     </div>
                 `;
             }
