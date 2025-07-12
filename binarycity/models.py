@@ -27,25 +27,42 @@ class Client(models.Model):
 
     def generate_client_code(self):
         words = self.name.upper().split()
-        if len(words) >= 3:
-            name_part = ''.join(word[0] for word in words[:3])
+        if len(words) == 1 and len(words[0]) == 1:
+            first_letter = words[0]
+            base_code = f"{first_letter}AA"
+            counter = 1
+            while True:
+                candidate_code = f"{base_code}{counter:03d}"
+                if not Client.objects.filter(client_code=candidate_code).exists():
+                    return candidate_code
+                counter += 1
+                if counter > 999:
+                    second_letter = base_code[1]
+                    if second_letter == 'Z':
+                        first_letter = chr(ord(base_code[0]) + 1)
+                        base_code = f"{first_letter}AA"
+                    else:
+                        base_code = f"{base_code[0]}{chr(ord(second_letter) + 1)}A"
+                    counter = 1
         else:
-            name_part = ''.join(word[0] for word in words)
-            if len(name_part) < 3:
-                last_word = words[-1] if words else ''
-                remaining_chars = last_word[1:] if len(last_word) > 1 else ''
-                name_part = name_part + remaining_chars
+            if len(words) >= 3:
+                name_part = ''.join(word[0] for word in words[:3])
+            else:
+                name_part = ''.join(word[0] for word in words)
                 if len(name_part) < 3:
-                    padding_needed = 3 - len(name_part)
-                    name_part = name_part + ''.join(string.ascii_uppercase[:padding_needed])
-
-        base_code = name_part[:3]
-        counter = 1
-        while True:
-            candidate_code = f"{base_code}{counter:03d}"
-            if not Client.objects.filter(client_code=candidate_code).exists():
-                return candidate_code
-            counter += 1
+                    last_word = words[-1] if words else ''
+                    remaining_chars = last_word[1:] if len(last_word) > 1 else ''
+                    name_part = name_part + remaining_chars
+                    if len(name_part) < 3:
+                        padding_needed = 3 - len(name_part)
+                        name_part = name_part + ''.join(string.ascii_uppercase[:padding_needed])
+            base_code = name_part[:3]
+            counter = 1
+            while True:
+                candidate_code = f"{base_code}{counter:03d}"
+                if not Client.objects.filter(client_code=candidate_code).exists():
+                    return candidate_code
+                counter += 1
 
     def get_contact_count(self):
         return self.contacts.count()
@@ -56,7 +73,6 @@ class Contact(models.Model):
     email = models.EmailField(unique=True, validators=[EmailValidator()], db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         ordering = ['surname', 'name']
         indexes = [
@@ -64,7 +80,6 @@ class Contact(models.Model):
             models.Index(fields=['email']),
             models.Index(fields=['created_at']),
         ]
-
     def __str__(self):
         return f"{self.surname} {self.name}"
 

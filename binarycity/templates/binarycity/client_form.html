@@ -6,6 +6,8 @@
 <div class="container">
     <h1>{% if object %}Edit{% else %}New{% endif %} Client</h1>
 
+    <div id="messageContainer"></div>
+
     <ul class="nav nav-tabs mb-4" id="clientTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
@@ -44,11 +46,11 @@
         {% if object %}
         <div class="tab-pane fade" id="contacts" role="tabpanel">
             {% if not linked_contacts %}
-                <div class="alert alert-info">
-                    No contacts found.
+                <div class="alert alert-info" id="noLinkedContactsMessage">
+                    No Linked Contacts.
                 </div>
             {% else %}
-                <div class="mb-4">
+                <div class="mb-4" id="linkedContactsContainer">
                     <h3>Linked Contacts</h3>
                     <input type="text" class="form-control mb-3" id="linkedContactsSearch" placeholder="Search linked contacts...">
                     <div class="table-responsive">
@@ -57,25 +59,56 @@
                                 <tr>
                                     <th>Contact Full Name</th>
                                     <th>Email address</th>
-                                    <th>Action</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for contact in linked_contacts %}
-                                <tr class="linked-contact-row">
+                                <tr class="linked-contact-row" data-contact-id="{{ contact.id }}">
                                     <td class="contact-name">{{ contact.get_full_name }}</td>
                                     <td class="contact-email">{{ contact.email }}</td>
                                     <td>
-                                        <a href="{% url 'unlink_contact_from_client' client_id=object.id contact_id=contact.id %}" 
-                                           class="btn btn-sm btn-danger">
+                                        <button type="button" class="btn btn-sm btn-danger unlink-contact"
+                                                data-url="{% url 'unlink_contact_from_client' client_id=object.id contact_id=contact.id %}">
                                             Unlink
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    {% if linked_contacts.paginator.num_pages > 1 %}
+                    <div class="pagination-container">
+                        <nav aria-label="Linked contacts navigation">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item {% if not linked_contacts.has_previous %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_contacts.has_previous %}{{ linked_contacts.previous_page_number }}{% else %}1{% endif %}#contacts" {% if not linked_contacts.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&larr;</span>
+                                    </a>
+                                </li>
+
+                                {% for num in linked_contacts.paginator.page_range %}
+                                    {% if linked_contacts.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > linked_contacts.number|add:'-3' and num < linked_contacts.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?linked_page={{ num }}#contacts">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <li class="page-item {% if not linked_contacts.has_next %}disabled{% endif %}">
+                                    <a class="page-link" href="?linked_page={% if linked_contacts.has_next %}{{ linked_contacts.next_page_number }}{% else %}{{ linked_contacts.paginator.num_pages }}{% endif %}#contacts" {% if not linked_contacts.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                        <span aria-hidden="true">&rarr;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -88,20 +121,20 @@
                             <tr>
                                 <th>Contact Full Name</th>
                                 <th>Email address</th>
-                                <th>Action</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for contact in contacts %}
                                 {% if contact not in linked_contacts %}
-                                <tr class="available-contact-row">
+                                <tr class="available-contact-row" data-contact-id="{{ contact.id }}">
                                     <td class="contact-name">{{ contact.get_full_name }}</td>
                                     <td class="contact-email">{{ contact.email }}</td>
                                     <td>
-                                        <a href="{% url 'link_contact_to_client' client_id=object.id contact_id=contact.id %}" 
-                                           class="btn btn-sm btn-success">
+                                        <button type="button" class="btn btn-sm btn-success link-contact"
+                                                data-url="{% url 'link_contact_to_client' client_id=object.id contact_id=contact.id %}">
                                             Link
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endif %}
@@ -109,6 +142,37 @@
                         </tbody>
                     </table>
                 </div>
+                {% if contacts.paginator.num_pages > 1 %}
+                <div class="pagination-container">
+                    <nav aria-label="Available contacts navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if not contacts.has_previous %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if contacts.has_previous %}{{ contacts.previous_page_number }}{% else %}1{% endif %}#contacts" {% if not contacts.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&larr;</span>
+                                </a>
+                            </li>
+
+                            {% for num in contacts.paginator.page_range %}
+                                {% if contacts.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > contacts.number|add:'-3' and num < contacts.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?available_page={{ num }}#contacts">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <li class="page-item {% if not contacts.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="?available_page={% if contacts.has_next %}{{ contacts.next_page_number }}{% else %}{{ contacts.paginator.num_pages }}{% endif %}#contacts" {% if not contacts.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                    <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
         {% endif %}
@@ -131,6 +195,107 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.hash = e.target.getAttribute('href');
         });
     });
+    function showMessage(message, type = 'success') {
+        const messageContainer = document.getElementById('messageContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        messageContainer.innerHTML = '';
+        messageContainer.appendChild(alert);
+    }
+    function handleLinkUnlink(url, row, isLink) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;  
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message);
+                if (isLink) {
+                    const linkedTable = document.querySelector('#linkedContactsTable tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'linked-contact-row';
+                    newRow.dataset.contactId = data.contact.id;
+                    newRow.innerHTML = `
+                        <td class="contact-name">${data.contact.full_name}</td>
+                        <td class="contact-email">${data.contact.email}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger unlink-contact"
+                                    data-url="/clients/${window.location.pathname.split('/')[2]}/unlink-contact/${data.contact.id}/">
+                                Unlink
+                            </button>
+                        </td>
+                    `;
+                    linkedTable.appendChild(newRow);
+                    row.remove();
+                    const noLinkedMessage = document.getElementById('noLinkedContactsMessage');
+                    if (noLinkedMessage) {
+                        noLinkedMessage.remove();
+                    }
+                    const newUnlinkBtn = newRow.querySelector('.unlink-contact');
+                    if (newUnlinkBtn) {
+                        newUnlinkBtn.addEventListener('click', function() {
+                            handleLinkUnlink(this.dataset.url, newRow, false);
+                        });
+                    }
+                } else {
+                    const availableTable = document.querySelector('#availableContactsTable tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'available-contact-row';
+                    newRow.dataset.contactId = row.dataset.contactId;
+                    newRow.innerHTML = `
+                        <td class="contact-name">${row.querySelector('.contact-name').textContent}</td>
+                        <td class="contact-email">${row.querySelector('.contact-email').textContent}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-success link-contact"
+                                    data-url="/clients/${window.location.pathname.split('/')[2]}/link-contact/${row.dataset.contactId}/">
+                                Link
+                            </button>
+                        </td>
+                    `;
+                    availableTable.appendChild(newRow);
+                    row.remove();
+                    const linkedTable = document.querySelector('#linkedContactsTable tbody');
+                    if (!linkedTable.querySelector('tr')) {
+                        const container = linkedTable.closest('.mb-4');
+                        container.innerHTML = `
+                            <div class="alert alert-info" id="noLinkedContactsMessage">
+                                No Linked Contacts.
+                            </div>
+                        `;
+                    }
+                    const newLinkBtn = newRow.querySelector('.link-contact');
+                    if (newLinkBtn) {
+                        newLinkBtn.addEventListener('click', function() {
+                            handleLinkUnlink(this.dataset.url, newRow, true);
+                        });
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred. Please try again.', 'danger');
+        });
+    }
+    document.querySelectorAll('.link-contact').forEach(button => {
+        button.addEventListener('click', function() {
+            handleLinkUnlink(this.dataset.url, this.closest('tr'), true);
+        });
+    });
+    document.querySelectorAll('.unlink-contact').forEach(button => {
+        button.addEventListener('click', function() {
+            handleLinkUnlink(this.dataset.url, this.closest('tr'), false);
+        });
+    });
     const linkedContactsSearch = document.getElementById('linkedContactsSearch');
     if (linkedContactsSearch) {
         linkedContactsSearch.addEventListener('input', function(e) {
@@ -149,6 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
     const availableContactsSearch = document.getElementById('availableContactsSearch');
     if (availableContactsSearch) {
         availableContactsSearch.addEventListener('input', function(e) {

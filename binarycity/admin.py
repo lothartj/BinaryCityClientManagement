@@ -9,7 +9,6 @@ class ClientAdmin(admin.ModelAdmin):
     readonly_fields = ('client_code', 'created_at', 'updated_at')
     ordering = ('name',)
     date_hierarchy = 'created_at'
-
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'client_code')
@@ -19,7 +18,6 @@ class ClientAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-
     def get_readonly_fields(self, request, obj=None):
         if obj:  
             return self.readonly_fields
@@ -33,7 +31,6 @@ class ContactAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('surname', 'name')
     date_hierarchy = 'created_at'
-
     fieldsets = (
         ('Personal Information', {
             'fields': ('name', 'surname', 'email')
