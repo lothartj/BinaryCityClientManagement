@@ -113,8 +113,9 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="analyticsModalLabel">
                         Client Contact Analytics
-                        <button type="button" class="btn btn-link text-primary p-0 ms-2" id="toggleAiInsights">
-                            <i class="fas fa-robot"></i>
+                        <button type="button" class="btn btn-outline-primary" id="toggleAiInsights">
+                            <i class="fas fa-chart-bar"></i>
+                            AI Insights
                         </button>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -241,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <p class="text-center">Loading...</p>
             <p class="text-center">Analyzing client-contact relationships...</p>
         `;
-
         fetch('/ai-analytics-insights/')
             .then(response => response.json())
             .then(data => {
@@ -276,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             });
     }
-
     if (toggleAiInsights) {
         toggleAiInsights.addEventListener('click', function() {
             aiInsightsVisible = !aiInsightsVisible;
