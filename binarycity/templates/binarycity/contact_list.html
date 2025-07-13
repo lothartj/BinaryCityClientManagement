@@ -43,7 +43,11 @@
                         <td class="text-start contact-name">{{ contact.name }}</td>
                         <td class="text-start contact-surname">{{ contact.surname }}</td>
                         <td class="text-start contact-email">{{ contact.email }}</td>
-                        <td class="text-center">{{ contact.get_client_count }}</td>
+                        <td class="text-center">
+                            <a href="#" class="linked-clients-count text-primary text-decoration-none" data-contact-id="{{ contact.id }}">
+                                {{ contact.get_client_count }}
+                            </a>
+                        </td>
                         <td class="text-start">
                             <a href="{% url 'contact_update' pk=contact.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
                         </td>
@@ -82,6 +86,29 @@
         </div>
         {% endif %}
     {% endif %}
+    <div class="modal fade" id="linkedItemsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Linked Clients</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table" id="linkedItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Client Name</th>
+                                    <th>Client Code</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="analyticsModal" tabindex="-1" aria-labelledby="analyticsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -118,12 +145,14 @@
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 {{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const contactSearch = document.getElementById('contactSearch');
+    const linkedItemsModal = new bootstrap.Modal(document.getElementById('linkedItemsModal'));
     if (contactSearch) {
         contactSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
@@ -142,12 +171,38 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    document.querySelectorAll('.linked-clients-count').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const contactId = this.dataset.contactId;
+            fetch(`/contacts/${contactId}/linked-clients/`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#linkedItemsTable tbody');
+                    tbody.innerHTML = '';
+                    data.clients.forEach(client => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${client.name}</td>
+                            <td>${client.client_code}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    linkedItemsModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching linked clients');
+                });
+        });
+    });
+    const ctx = document.getElementById('contactClientsChart').getContext('2d');
     let chart = null;
-    function loadAnalytics() {
-        fetch('{% url "contact_clients_analytics" %}')
+    function updateChart() {
+        fetch('/contact-clients-analytics/')
             .then(response => response.json())
             .then(data => {
-                const ctx = document.getElementById('contactClientsChart').getContext('2d');
                 if (chart) {
                     chart.destroy();
                 }
@@ -156,10 +211,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: {
                         labels: data.labels,
                         datasets: [{
-                            label: 'Number of Linked Clients',
-                            data: data.data,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            label: 'Number of Clients',
+                            data: data.values,
+                            backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                            borderColor: 'rgb(13, 110, 253)',
                             borderWidth: 1
                         }]
                     },
@@ -172,86 +227,61 @@ document.addEventListener('DOMContentLoaded', function() {
                                     stepSize: 1
                                 }
                             }
-                        },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Number of Linked Clients per Contact'
-                            }
                         }
                     }
                 });
-            })
-            .catch(error => {
-                console.error('Error loading analytics:', error);
             });
     }
-    function loadAiInsights() {
-        const aiInsightsContent = document.getElementById('aiInsightsContent');
+    updateChart();
+    let aiInsightsVisible = false;
+    const toggleAiInsights = document.getElementById('toggleAiInsights');
+    const chartContainer = document.getElementById('chartContainer');
+    const aiInsightsContainer = document.getElementById('aiInsightsContainer');
+    const aiInsightsContent = document.getElementById('aiInsightsContent');
+    const refreshAiInsights = document.getElementById('refreshAiInsights');
+
+    function updateAiInsights() {
         aiInsightsContent.innerHTML = `
             <p class="text-center">Loading...</p>
             <p class="text-center">Analyzing contact-client relationships...</p>
         `;
-        fetch('{% url "ai_analytics_insights" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                view_type: 'contact'
+
+        fetch('/ai-analytics-insights/')
+            .then(response => response.json())
+            .then(data => {
+                aiInsightsContent.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-text">${data.insights}</p>
+                        </div>
+                    </div>
+                `;
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
+            .catch(error => {
+                console.error('Error:', error);
                 aiInsightsContent.innerHTML = `
                     <div class="alert alert-danger">
-                        ${data.error}
+                        An error occurred while fetching AI insights.
                     </div>
                 `;
-            } else {
-                aiInsightsContent.innerHTML = `
-                    <div class="ai-analysis">
-                        ${data.response
-                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                            .replace(/^\* (.+)$/gm, '• $1')
-                            .replace(/\n/g, '<br>')}
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            aiInsightsContent.innerHTML = `
-                <div class="alert alert-danger">
-                    An error occurred while fetching AI insights. Please try again.
-                </div>
-            `;
-        });
+            });
     }
-    const analyticsModal = document.getElementById('analyticsModal');
-    if (analyticsModal) {
-        analyticsModal.addEventListener('show.bs.modal', loadAnalytics);
-    }
-    const toggleAiInsights = document.getElementById('toggleAiInsights');
-    const chartContainer = document.getElementById('chartContainer');
-    const aiInsightsContainer = document.getElementById('aiInsightsContainer');
+
     if (toggleAiInsights) {
         toggleAiInsights.addEventListener('click', function() {
-            const showingChart = !chartContainer.classList.contains('d-none');
-            if (showingChart) {
+            aiInsightsVisible = !aiInsightsVisible;
+            if (aiInsightsVisible) {
                 chartContainer.classList.add('d-none');
                 aiInsightsContainer.classList.remove('d-none');
-                loadAiInsights();
+                updateAiInsights();
             } else {
                 chartContainer.classList.remove('d-none');
                 aiInsightsContainer.classList.add('d-none');
             }
         });
     }
-    const refreshAiInsights = document.getElementById('refreshAiInsights');
     if (refreshAiInsights) {
-        refreshAiInsights.addEventListener('click', loadAiInsights);
+        refreshAiInsights.addEventListener('click', updateAiInsights);
     }
 });
 </script>

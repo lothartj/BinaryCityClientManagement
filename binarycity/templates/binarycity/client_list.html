@@ -41,7 +41,11 @@
                         <tr class="client-row">
                             <td class="text-start client-name">{{ client.name }}</td>
                             <td class="text-start client-code">{{ client.client_code }}</td>
-                            <td class="text-center">{{ client.get_contact_count }}</td>
+                            <td class="text-center">
+                                <a href="#" class="linked-contacts-count text-primary text-decoration-none" data-client-id="{{ client.id }}">
+                                    {{ client.get_contact_count }}
+                                </a>
+                            </td>
                             <td class="text-start">
                                 <a href="{% url 'client_update' pk=client.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
                             </td>
@@ -80,6 +84,29 @@
             </div>
         {% endif %}
     {% endif %}
+    <div class="modal fade" id="linkedItemsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Linked Contacts</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table" id="linkedItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Contact Full Name</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="analyticsModal" tabindex="-1" aria-labelledby="analyticsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -122,13 +149,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const clientSearch = document.getElementById('clientSearch');
+    const linkedItemsModal = new bootstrap.Modal(document.getElementById('linkedItemsModal'));
     if (clientSearch) {
         clientSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('.client-row');
+            
             rows.forEach(row => {
                 const name = row.querySelector('.client-name').textContent.toLowerCase();
                 const code = row.querySelector('.client-code').textContent.toLowerCase();
+                
                 if (name.includes(searchTerm) || code.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
@@ -137,12 +167,38 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    document.querySelectorAll('.linked-contacts-count').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const clientId = this.dataset.clientId;
+            fetch(`/clients/${clientId}/linked-contacts/`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#linkedItemsTable tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.contacts.forEach(contact => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${contact.full_name}</td>
+                            <td>${contact.email}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    linkedItemsModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching linked contacts');
+                });
+        });
+    });
+    const ctx = document.getElementById('clientContactsChart').getContext('2d');
     let chart = null;
-    function loadAnalytics() {
-        fetch('{% url "client_contacts_analytics" %}')
+    function updateChart() {
+        fetch('/client-contacts-analytics/')
             .then(response => response.json())
             .then(data => {
-                const ctx = document.getElementById('clientContactsChart').getContext('2d');
                 if (chart) {
                     chart.destroy();
                 }
@@ -151,10 +207,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: {
                         labels: data.labels,
                         datasets: [{
-                            label: 'Number of Linked Contacts',
-                            data: data.data,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            label: 'Number of Contacts',
+                            data: data.values,
+                            backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                            borderColor: 'rgb(13, 110, 253)',
                             borderWidth: 1
                         }]
                     },
@@ -167,86 +223,61 @@ document.addEventListener('DOMContentLoaded', function() {
                                     stepSize: 1
                                 }
                             }
-                        },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Number of Linked Contacts per Client'
-                            }
                         }
                     }
                 });
-            })
-            .catch(error => {
-                console.error('Error loading analytics:', error);
             });
     }
-    function loadAiInsights() {
-        const aiInsightsContent = document.getElementById('aiInsightsContent');
+    updateChart();
+    let aiInsightsVisible = false;
+    const toggleAiInsights = document.getElementById('toggleAiInsights');
+    const chartContainer = document.getElementById('chartContainer');
+    const aiInsightsContainer = document.getElementById('aiInsightsContainer');
+    const aiInsightsContent = document.getElementById('aiInsightsContent');
+    const refreshAiInsights = document.getElementById('refreshAiInsights');
+
+    function updateAiInsights() {
         aiInsightsContent.innerHTML = `
             <p class="text-center">Loading...</p>
             <p class="text-center">Analyzing client-contact relationships...</p>
         `;
-        fetch('{% url "ai_analytics_insights" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                view_type: 'client'
+
+        fetch('/ai-analytics-insights/')
+            .then(response => response.json())
+            .then(data => {
+                aiInsightsContent.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-text">${data.insights}</p>
+                        </div>
+                    </div>
+                `;
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
+            .catch(error => {
+                console.error('Error:', error);
                 aiInsightsContent.innerHTML = `
                     <div class="alert alert-danger">
-                        ${data.error}
+                        An error occurred while fetching AI insights.
                     </div>
                 `;
-            } else {
-                aiInsightsContent.innerHTML = `
-                    <div class="ai-analysis">
-                        ${data.response
-                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                            .replace(/^\* (.+)$/gm, '• $1')
-                            .replace(/\n/g, '<br>')}
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            aiInsightsContent.innerHTML = `
-                <div class="alert alert-danger">
-                    An error occurred while fetching AI insights. Please try again.
-                </div>
-            `;
-        });
+            });
     }
-    const analyticsModal = document.getElementById('analyticsModal');
-    if (analyticsModal) {
-        analyticsModal.addEventListener('show.bs.modal', loadAnalytics);
-    }
-    const toggleAiInsights = document.getElementById('toggleAiInsights');
-    const chartContainer = document.getElementById('chartContainer');
-    const aiInsightsContainer = document.getElementById('aiInsightsContainer');
+
     if (toggleAiInsights) {
         toggleAiInsights.addEventListener('click', function() {
-            const showingChart = !chartContainer.classList.contains('d-none');
-            if (showingChart) {
+            aiInsightsVisible = !aiInsightsVisible;
+            if (aiInsightsVisible) {
                 chartContainer.classList.add('d-none');
                 aiInsightsContainer.classList.remove('d-none');
-                loadAiInsights();
+                updateAiInsights();
             } else {
                 chartContainer.classList.remove('d-none');
                 aiInsightsContainer.classList.add('d-none');
             }
         });
     }
-    const refreshAiInsights = document.getElementById('refreshAiInsights');
     if (refreshAiInsights) {
-        refreshAiInsights.addEventListener('click', loadAiInsights);
+        refreshAiInsights.addEventListener('click', updateAiInsights);
     }
 });
 </script>
