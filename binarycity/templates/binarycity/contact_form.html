@@ -221,6 +221,46 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'success') {
                 showMessage(data.message);
                 if (isLink) {
+
+                    const noLinkedMessage = document.getElementById('noLinkedClientsMessage');
+                    if (noLinkedMessage) {
+                        const newContent = document.createElement('div');
+                        newContent.className = 'mb-4';
+                        newContent.id = 'linkedClientsContainer';
+                        newContent.innerHTML = `
+                            <h3>Linked Clients</h3>
+                            <input type="text" class="form-control mb-3" id="linkedClientsSearch" placeholder="Search linked clients...">
+                            <div class="table-responsive">
+                                <table class="table" id="linkedClientsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Client name</th>
+                                            <th>Client code</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        `;
+                        noLinkedMessage.replaceWith(newContent);
+                        const linkedClientsSearch = document.getElementById('linkedClientsSearch');
+                        if (linkedClientsSearch) {
+                            linkedClientsSearch.addEventListener('input', function(e) {
+                                const searchTerm = e.target.value.toLowerCase();
+                                const rows = document.querySelectorAll('#linkedClientsTable .linked-client-row');
+                                rows.forEach(row => {
+                                    const name = row.querySelector('.client-name').textContent.toLowerCase();
+                                    const code = row.querySelector('.client-code').textContent.toLowerCase();
+                                    if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                                        row.style.display = '';
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                });
+                            });
+                        }
+                    }
                     const linkedTable = document.querySelector('#linkedClientsTable tbody');
                     const newRow = document.createElement('tr');
                     newRow.className = 'linked-client-row';
@@ -237,10 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     linkedTable.appendChild(newRow);
                     row.remove();
-                    const noLinkedMessage = document.getElementById('noLinkedClientsMessage');
-                    if (noLinkedMessage) {
-                        noLinkedMessage.remove();
-                    }
                     const newUnlinkBtn = newRow.querySelector('.unlink-client');
                     if (newUnlinkBtn) {
                         newUnlinkBtn.addEventListener('click', function() {

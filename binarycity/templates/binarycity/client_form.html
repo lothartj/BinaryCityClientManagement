@@ -220,6 +220,46 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'success') {
                 showMessage(data.message);
                 if (isLink) {
+                    const noLinkedMessage = document.getElementById('noLinkedContactsMessage');
+                    if (noLinkedMessage) {
+                        const newContent = document.createElement('div');
+                        newContent.className = 'mb-4';
+                        newContent.id = 'linkedContactsContainer';
+                        newContent.innerHTML = `
+                            <h3>Linked Contacts</h3>
+                            <input type="text" class="form-control mb-3" id="linkedContactsSearch" placeholder="Search linked contacts...">
+                            <div class="table-responsive">
+                                <table class="table" id="linkedContactsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Contact Full Name</th>
+                                            <th>Email address</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        `;
+                        noLinkedMessage.replaceWith(newContent);
+                        const linkedContactsSearch = document.getElementById('linkedContactsSearch');
+                        if (linkedContactsSearch) {
+                            linkedContactsSearch.addEventListener('input', function(e) {
+                                const searchTerm = e.target.value.toLowerCase();
+                                const rows = document.querySelectorAll('#linkedContactsTable .linked-contact-row');
+                                rows.forEach(row => {
+                                    const name = row.querySelector('.contact-name').textContent.toLowerCase();
+                                    const email = row.querySelector('.contact-email').textContent.toLowerCase();
+                                    if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                                        row.style.display = '';
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                });
+                            });
+                        }
+                    }
+
                     const linkedTable = document.querySelector('#linkedContactsTable tbody');
                     const newRow = document.createElement('tr');
                     newRow.className = 'linked-contact-row';
@@ -236,10 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     linkedTable.appendChild(newRow);
                     row.remove();
-                    const noLinkedMessage = document.getElementById('noLinkedContactsMessage');
-                    if (noLinkedMessage) {
-                        noLinkedMessage.remove();
-                    }
                     const newUnlinkBtn = newRow.querySelector('.unlink-contact');
                     if (newUnlinkBtn) {
                         newUnlinkBtn.addEventListener('click', function() {
