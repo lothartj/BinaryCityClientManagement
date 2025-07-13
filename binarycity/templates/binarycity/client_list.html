@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         labels: data.labels,
                         datasets: [{
                             label: 'Number of Contacts',
-                            data: data.values,
+                            data: data.data,
                             backgroundColor: 'rgba(13, 110, 253, 0.5)',
                             borderColor: 'rgb(13, 110, 253)',
                             borderWidth: 1
@@ -245,10 +245,24 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/ai-analytics-insights/')
             .then(response => response.json())
             .then(data => {
+                let formattedText = data.insights
+                    .split(/\n\n/)
+                    .map(paragraph => {
+                        paragraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong class="d-block mb-3">$1</strong>');
+                        if (paragraph.includes('* ')) {
+                            let points = paragraph.split('* ').filter(Boolean);
+                            paragraph = '<ul class="mb-4">' + 
+                                points.map(point => `<li>${point.trim()}</li>`).join('\n') +
+                                '</ul>';
+                        }
+                        return paragraph;
+                    })
+                    .join('\n\n');
+
                 aiInsightsContent.innerHTML = `
                     <div class="card">
                         <div class="card-body">
-                            <p class="card-text">${data.insights}</p>
+                            ${formattedText}
                         </div>
                     </div>
                 `;
