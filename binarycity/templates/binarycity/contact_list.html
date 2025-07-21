@@ -91,7 +91,10 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Linked Clients</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div>
+                        <a href="#" class="btn btn-primary me-2" id="editContactBtn">Edit Contact</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="table-responsive">
@@ -176,6 +179,11 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const contactId = this.dataset.contactId;
+            
+            // Update edit button href
+            const editBtn = document.getElementById('editContactBtn');
+            editBtn.href = `/contacts/${contactId}/edit/`;
+            
             fetch(`/contacts/${contactId}/linked-clients/`)
                 .then(response => response.json())
                 .then(data => {
