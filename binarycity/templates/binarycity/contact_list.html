@@ -179,11 +179,8 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const contactId = this.dataset.contactId;
-            
-            // Update edit button href
             const editBtn = document.getElementById('editContactBtn');
             editBtn.href = `/contacts/${contactId}/edit/`;
-            
             fetch(`/contacts/${contactId}/linked-clients/`)
                 .then(response => response.json())
                 .then(data => {

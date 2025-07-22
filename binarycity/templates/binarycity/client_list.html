@@ -175,8 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const clientId = this.dataset.clientId;
-            
-            // Update edit button href
             const editBtn = document.getElementById('editClientBtn');
             editBtn.href = `/clients/${clientId}/edit/`;
             

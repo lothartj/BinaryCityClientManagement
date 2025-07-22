@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, viewsanalytics, viewschat, viewslogin
+from . import views, viewsanalytics, viewschat, viewslogin, viewsexportimport
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -15,8 +15,10 @@ urlpatterns = [
     path('client-contacts-analytics/', views.get_client_contacts_analytics, name='client_contacts_analytics'),
     path('contact-clients-analytics/', views.get_contact_clients_analytics, name='contact_clients_analytics'),
     path('ai-analytics-insights/', viewsanalytics.get_ai_analytics_insights, name='ai_analytics_insights'),
-    path('export/clients/', views.export_clients, name='export_clients'),
-    path('export/contacts/', views.export_contacts, name='export_contacts'),
+    path('export/clients/', viewsexportimport.export_clients_csv, name='export_clients'),
+    path('export/contacts/', viewsexportimport.export_contacts_csv, name='export_contacts'),
+    path('import/clients/', viewsexportimport.import_clients_csv, name='import_clients'),
+    path('import/contacts/', viewsexportimport.import_contacts_csv, name='import_contacts'),
     path('contacts/', views.ContactListView.as_view(), name='contact_list'),
     path('contacts/create/', views.ContactCreateView.as_view(), name='contact_create'),
     path('contacts/<int:pk>/edit/', views.ContactUpdateView.as_view(), name='contact_update'),

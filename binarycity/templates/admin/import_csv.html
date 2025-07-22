@@ -1,0 +1,61 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{{ title }}</h1>
+    
+    {% if messages %}
+    <ul class="messagelist">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <div class="module">
+        <form action="" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div>
+                    <label for="file">Select file to import:</label>
+                    <input type="file" name="file" id="file" required accept=".csv,.xlsx,.xls">
+                    <p class="help">Accepted formats: CSV, Excel (xlsx, xls)</p>
+                </div>
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" value="Import File" class="default">
+            </div>
+        </form>
+    </div>
+    
+    <div class="description">
+        <h2>File Format Requirements:</h2>
+        {% if import_type == 'clients' %}
+        <p>The file should have the following columns:</p>
+        <ul>
+            <li>Name</li>
+            <li>Client Code</li>
+        </ul>
+        <p>Example format:</p>
+        <pre>Name,Client Code
+Binary City,BCI001
+First National Bank,FNB001</pre>
+        {% else %}
+        <p>The file should have the following columns:</p>
+        <ul>
+            <li>Name</li>
+            <li>Surname</li>
+            <li>Email</li>
+        </ul>
+        <p>Example format:</p>
+        <pre>Name,Surname,Email
+John,Doe,john.doe@example.com
+Jane,Smith,jane.smith@example.com</pre>
+        {% endif %}
+        <p class="help">Note: For Excel files, make sure the columns are in the same order as shown above.</p>
+    </div>
+</div>
+{% endblock %} 

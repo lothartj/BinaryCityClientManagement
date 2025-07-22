@@ -89,7 +89,7 @@ def notify_all_clients_background(message, request=None):
         results = []
         for client in notification_clients:
             phone = client.get_formatted_phone()
-            if phone:
+            if phone  :
                 logger.info(f"Sending message to {client.name} ({phone})")
                 result = send_whatsapp_message(phone, formatted_message)
                 logger.info(f"WhatsApp API response for {client.name}: {result}")

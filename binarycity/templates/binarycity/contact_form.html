@@ -6,16 +6,25 @@
 <div class="container">
     <h1>{% if object %}Edit{% else %}New{% endif %} Contact</h1>
     <div id="messageContainer"></div>
-    <ul class="nav nav-tabs mb-4" id="contactTabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
-        </li>
-        {% if object %}
-        <li class="nav-item">
-            <a class="nav-link" id="clients-tab" data-bs-toggle="tab" href="#clients" role="tab">Client(s)</a>
-        </li>
-        {% endif %}
-    </ul>
+    <div class="position-relative">
+        <ul class="nav nav-tabs mb-4" id="contactTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab">General</a>
+            </li>
+            {% if object %}
+            <li class="nav-item">
+                <a class="nav-link" id="clients-tab" data-bs-toggle="tab" href="#clients" role="tab">Client(s)</a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="position-absolute top-0 end-0">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-primary d-none" style="cursor: pointer;" id="toggleViewBtn">
+                <rect x="4" y="5" width="7" height="4" rx="1"/>
+                <rect x="4" y="10" width="7" height="4" rx="1"/>
+                <rect x="4" y="15" width="16" height="4" rx="1"/>
+            </svg>
+        </div>
+    </div>
     <div class="tab-content" id="contactTabContent">
         <div class="tab-pane fade show active" id="general" role="tabpanel">
             <form method="post" class="needs-validation" novalidate>
@@ -117,85 +126,86 @@
                     {% endif %}
                 </div>
             {% endif %}
-            <h3 class="mt-4">Available Clients</h3>
-            <input type="text" class="form-control mb-3" id="availableClientsSearch" placeholder="Search available clients...">
-            {% if clients %}
-                <div class="table-responsive">
-                    <table class="table" id="availableClientsTable">
-                        <thead>
-                            <tr>
-                                <th>Client name</th>
-                                <th>Client code</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for client in clients %}
-                                {% if client not in linked_clients %}
-                                <tr class="available-client-row" data-client-id="{{ client.id }}">
-                                    <td class="client-name">{{ client.name }}</td>
-                                    <td class="client-code">{{ client.client_code }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-success link-client"
-                                                data-url="{% url 'link_client_to_contact' contact_id=object.id client_id=client.id %}">
-                                            Link
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="modal fade" id="availableClientsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Available Clients</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" class="form-control mb-3" id="availableClientsSearch" placeholder="Search available clients...">
+                            {% if clients %}
+                                <div class="table-responsive">
+                                    <table class="table" id="availableClientsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Client name</th>
+                                                <th>Client code</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for client in clients %}
+                                                {% if client not in linked_clients %}
+                                                <tr class="available-client-row" data-client-id="{{ client.id }}">
+                                                    <td class="client-name">{{ client.name }}</td>
+                                                    <td class="client-code">{{ client.client_code }}</td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-sm btn-success link-client"
+                                                                data-url="{% url 'link_client_to_contact' contact_id=object.id client_id=client.id %}">
+                                                            Link
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                {% if clients.paginator.num_pages > 1 %}
-                <div class="pagination-container">
-                    <nav aria-label="Available clients navigation">
-                        <ul class="pagination justify-content-center mb-0">
-                            <li class="page-item {% if not clients.has_previous %}disabled{% endif %}">
-                                <a class="page-link" href="?available_page={% if clients.has_previous %}{{ clients.previous_page_number }}{% else %}1{% endif %}#clients" {% if not clients.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
-                                    <span aria-hidden="true">&larr;</span>
-                                </a>
-                            </li>
-                            {% for num in clients.paginator.page_range %}
-                                {% if clients.number == num %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ num }}</span>
-                                    </li>
-                                {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?available_page={{ num }}#clients">{{ num }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                            <li class="page-item {% if not clients.has_next %}disabled{% endif %}">
-                                <a class="page-link" href="?available_page={% if clients.has_next %}{{ clients.next_page_number }}{% else %}{{ clients.paginator.num_pages }}{% endif %}#clients" {% if not clients.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
-                                    <span aria-hidden="true">&rarr;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-                {% endif %}
-            {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
+{{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
     let hash = window.location.hash;
     if (hash) {
         let tab = new bootstrap.Tab(document.querySelector(`a[href="${hash}"]`));
         tab.show();
     }
-    let tabs = document.querySelectorAll('a[data-bs-toggle="tab"]');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const availableClientsModal = new bootstrap.Modal(document.getElementById('availableClientsModal'));
     tabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            window.location.hash = e.target.getAttribute('href');
+        tab.addEventListener('shown.bs.tab', function(event) {
+            window.location.hash = event.target.getAttribute('href');
+            if (event.target.id === 'clients-tab') {
+                toggleViewBtn.classList.remove('d-none');
+            } else {
+                toggleViewBtn.classList.add('d-none');
+            }
         });
     });
+
+    if (toggleViewBtn) {
+        toggleViewBtn.addEventListener('click', function() {
+            availableClientsModal.show();
+        });
+    }
+    if (window.location.hash === '#clients') {
+        toggleViewBtn.classList.remove('d-none');
+    }
+
     function showMessage(message, type = 'success') {
         const messageContainer = document.getElementById('messageContainer');
         const alert = document.createElement('div');
@@ -221,9 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'success') {
                 showMessage(data.message);
                 if (isLink) {
-
+                    const clientsTab = document.getElementById('clients');
                     const noLinkedMessage = document.getElementById('noLinkedClientsMessage');
                     if (noLinkedMessage) {
+                        noLinkedMessage.remove();
                         const newContent = document.createElement('div');
                         newContent.className = 'mb-4';
                         newContent.id = 'linkedClientsContainer';
@@ -243,79 +254,78 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </table>
                             </div>
                         `;
-                        noLinkedMessage.replaceWith(newContent);
-                        const linkedClientsSearch = document.getElementById('linkedClientsSearch');
-                        if (linkedClientsSearch) {
-                            linkedClientsSearch.addEventListener('input', function(e) {
-                                const searchTerm = e.target.value.toLowerCase();
-                                const rows = document.querySelectorAll('#linkedClientsTable .linked-client-row');
-                                rows.forEach(row => {
-                                    const name = row.querySelector('.client-name').textContent.toLowerCase();
-                                    const code = row.querySelector('.client-code').textContent.toLowerCase();
-                                    if (name.includes(searchTerm) || code.includes(searchTerm)) {
-                                        row.style.display = '';
-                                    } else {
-                                        row.style.display = 'none';
-                                    }
-                                });
+                        clientsTab.appendChild(newContent);
+                    }
+
+                    const linkedTable = document.querySelector('#linkedClientsTable tbody');
+                    if (linkedTable) {
+                        const newRow = document.createElement('tr');
+                        newRow.className = 'linked-client-row';
+                        newRow.dataset.clientId = data.client.id;
+                        newRow.innerHTML = `
+                            <td class="client-name">${data.client.name}</td>
+                            <td class="client-code">${data.client.client_code}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger unlink-client" 
+                                        data-url="/contacts/${window.location.pathname.split('/')[2]}/unlink-client/${data.client.id}/">
+                                    Unlink
+                                </button>
+                            </td>
+                        `;
+                        linkedTable.appendChild(newRow);
+                        row.remove();
+                        const newUnlinkBtn = newRow.querySelector('.unlink-client');
+                        if (newUnlinkBtn) {
+                            newUnlinkBtn.addEventListener('click', function() {
+                                handleLinkUnlink(this.dataset.url, newRow, false);
                             });
                         }
                     }
-                    const linkedTable = document.querySelector('#linkedClientsTable tbody');
-                    const newRow = document.createElement('tr');
-                    newRow.className = 'linked-client-row';
-                    newRow.dataset.clientId = data.client.id;
-                    newRow.innerHTML = `
-                        <td class="client-name">${data.client.name}</td>
-                        <td class="client-code">${data.client.client_code}</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-danger unlink-client" 
-                                    data-url="/contacts/${window.location.pathname.split('/')[2]}/unlink-client/${data.client.id}/">
-                                Unlink
-                            </button>
-                        </td>
-                    `;
-                    linkedTable.appendChild(newRow);
-                    row.remove();
-                    const newUnlinkBtn = newRow.querySelector('.unlink-client');
-                    if (newUnlinkBtn) {
-                        newUnlinkBtn.addEventListener('click', function() {
-                            handleLinkUnlink(this.dataset.url, newRow, false);
-                        });
-                    }
                 } else {
-                    const availableTable = document.querySelector('#availableClientsTable tbody');
-                    const newRow = document.createElement('tr');
-                    newRow.className = 'available-client-row';
-                    newRow.dataset.clientId = row.dataset.clientId;
-                    newRow.innerHTML = `
-                        <td class="client-name">${row.querySelector('.client-name').textContent}</td>
-                        <td class="client-code">${row.querySelector('.client-code').textContent}</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-success link-client"
-                                    data-url="/contacts/${window.location.pathname.split('/')[2]}/link-client/${row.dataset.clientId}/">
-                                Link
-                            </button>
-                        </td>
-                    `;
-                    availableTable.appendChild(newRow);
                     row.remove();
                     const linkedTable = document.querySelector('#linkedClientsTable tbody');
-                    if (!linkedTable.querySelector('tr')) {
-                        const container = linkedTable.closest('.mb-4');
-                        container.innerHTML = `
-                            <div class="alert alert-info" id="noLinkedClientsMessage">
-                                No Linked Clients.
-                            </div>
-                        `;
+                    const clientsTab = document.getElementById('clients');
+                    
+                    if (linkedTable && !linkedTable.querySelector('tr')) {
+                        const container = document.getElementById('linkedClientsContainer');
+                        if (container) {
+                            container.remove();
+                        }
+                        const noLinkedMessage = document.createElement('div');
+                        noLinkedMessage.className = 'alert alert-info';
+                        noLinkedMessage.id = 'noLinkedClientsMessage';
+                        noLinkedMessage.textContent = 'No Linked Clients.';
+                        if (clientsTab) {
+                            clientsTab.appendChild(noLinkedMessage);
+                        }
                     }
-                    const newLinkBtn = newRow.querySelector('.link-client');
-                    if (newLinkBtn) {
-                        newLinkBtn.addEventListener('click', function() {
-                            handleLinkUnlink(this.dataset.url, newRow, true);
-                        });
+
+                    const availableTable = document.querySelector('#availableClientsTable tbody');
+                    if (availableTable) {
+                        const newRow = document.createElement('tr');
+                        newRow.className = 'available-client-row';
+                        newRow.dataset.clientId = row.dataset.clientId;
+                        newRow.innerHTML = `
+                            <td class="client-name">${row.querySelector('.client-name').textContent}</td>
+                            <td class="client-code">${row.querySelector('.client-code').textContent}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-success link-client"
+                                        data-url="/contacts/${window.location.pathname.split('/')[2]}/link-client/${row.dataset.clientId}/">
+                                    Link
+                                </button>
+                            </td>
+                        `;
+                        availableTable.appendChild(newRow);
+                        const newLinkBtn = newRow.querySelector('.link-client');
+                        if (newLinkBtn) {
+                            newLinkBtn.addEventListener('click', function() {
+                                handleLinkUnlink(this.dataset.url, newRow, true);
+                            });
+                        }
                     }
                 }
+            } else {
+                showMessage(data.message || 'An error occurred while processing your request.', 'danger');
             }
         })
         .catch(error => {
